@@ -1,0 +1,8 @@
+#pragma once
+#include <string>
+
+std::string boost_all_unit_tests_part1 = "@allTestsPart1@";
+std::string boost_all_unit_tests_part2 = "@allTestsPart2@";
+std::string boost_all_unit_tests_part3 = "@allTestsPart3@";
+std::string boost_all_unit_tests_part4 = "@allTestsPart4@";
+std::string boost_all_unit_tests_part5 = "@allTestsPart5@";

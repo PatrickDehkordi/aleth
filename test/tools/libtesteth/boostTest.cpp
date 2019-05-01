@@ -16,7 +16,9 @@
 #include <test/tools/jsontests/TransactionTests.h>
 #include <test/tools/jsontests/vm.h>
 #include <test/tools/libtesteth/TestHelper.h>
+#include <test/tools/libtesteth/boostTest.h>
 #include <boost/test/included/unit_test.hpp>
+#include <boost/tokenizer.hpp>
 #include <clocale>
 #include <cstdlib>
 #include <iostream>
@@ -82,9 +84,19 @@ int main(int argc, const char* argv[])
     setDefaultOrCLocale();
 
     // Initialize options
+    string sMinusTArg;
     try
     {
         dev::test::Options::get(argc, argv);
+        for (int i = 0; i < argc; i++)  // find -t boost arg
+        {
+            std::string arg = std::string{argv[i]};
+            if (arg == "-t" && i + 1 < argc)
+            {
+                sMinusTArg = std::string{argv[i + 1]};
+                break;
+            }
+        }
     }
     catch (dev::test::InvalidOption const& e)
     {
@@ -137,6 +149,49 @@ int main(int argc, const char* argv[])
     int result = 0;
     auto fakeInit = [](int, char* []) -> boost::unit_test::test_suite* { return nullptr; };
     result = unit_test_main(fakeInit, argc, const_cast<char**>(argv));
+
+    // Print suggestions of a test case
+    if (result == 200)  // test suite not found
+    {
+        vector<string> availableTests;
+        typedef boost::char_separator<char> BoostSeparator;
+        BoostSeparator sep(";");
+        boost::tokenizer<BoostSeparator> tok(
+            boost_all_unit_tests_part1 + ";" + boost_all_unit_tests_part2 + ";" +
+                boost_all_unit_tests_part3 + ";" + boost_all_unit_tests_part4 + ";" +
+                boost_all_unit_tests_part5,
+            sep);
+        for (boost::tokenizer<BoostSeparator>::iterator it = tok.begin(); it != tok.end(); ++it)
+            availableTests.push_back(*it);
+
+        typedef std::pair<string, size_t> NameDistance;
+        std::vector<NameDistance> distanceMap;  // <index in availableTests, compared distance>
+        for (auto& it : availableTests)
+        {
+            int dist = test::levenshtein_distance(
+                sMinusTArg.c_str(), sMinusTArg.size(), it.c_str(), it.size());
+            distanceMap.push_back({it, dist});
+        }
+        std::sort(distanceMap.begin(), distanceMap.end(),
+            [](NameDistance const& a, NameDistance const& b) { return a.second < b.second; });
+        std::cerr << "Did you mean: "
+                  << "\n";
+        std::set<string> suggestionSet;
+        size_t hasSlash = sMinusTArg.find_first_of("/");
+        for (size_t i = 0; i < 3; i++)
+        {
+            if (i < distanceMap.size())
+            {
+                string name = distanceMap[i].first;
+                if (hasSlash ==
+                    string::npos)  // if user input only test suite. print test suite suggestions
+                    name = name.substr(0, name.find_first_of("/"));
+                suggestionSet.emplace(name);
+            }
+        }
+        for (auto const& it : suggestionSet)
+            std::cerr << "-t " << it << "\n";
+    }
     dev::test::TestOutputHelper::get().printTestExecStats();
     return result;
 }
