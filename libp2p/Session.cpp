@@ -451,7 +451,6 @@ char const* Session::capabilityPacketTypeToString(unsigned _packetType) const
     for (auto capIter : m_capabilities)
     {
         auto const& capName = capIter.first.first;
-        auto const& capVersion = capIter.first.second;
         auto cap = capIter.second;
         if (canHandle(capName, cap->messageCount(), _packetType))
         {
