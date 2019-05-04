@@ -92,6 +92,10 @@ public:
     unsigned version() const override { return c_protocolVersion; }
     p2p::CapDesc descriptor() const override { return {name(), version()}; }
     unsigned messageCount() const override { return PacketCount; }
+    char const* packetTypeToString(unsigned _packetType) const override
+    {
+        return ethPacketTypeToString(static_cast<EthSubprotocolPacketType>(_packetType));
+    }
     std::chrono::milliseconds backgroundWorkInterval() const override;
 
     unsigned protocolVersion() const { return c_protocolVersion; }
@@ -122,8 +126,8 @@ public:
     void onDisconnect(NodeID const& _nodeID) override;
     bool interpretCapabilityPacket(NodeID const& _peerID, unsigned _id, RLP const& _r) override;
 
-    /// Main work loop - sends new transactions and blocks to available peers and disconnects from
-    /// timed out peers
+    /// Main work loop - sends new transactions and blocks to available peers and disconnects
+    /// from timed out peers
     void doBackgroundWork() override;
 
     p2p::CapabilityHostFace& capabilityHost() { return *m_host; }
@@ -147,7 +151,8 @@ private:
     void maintainBlocks(h256 const& _currentBlock);
     void onTransactionImported(ImportResult _ir, h256 const& _h, h512 const& _nodeId);
 
-    /// Initialises the network peer-state, doing the stuff that needs to be once-only. @returns true if it really was first.
+    /// Initialises the network peer-state, doing the stuff that needs to be once-only. @returns
+    /// true if it really was first.
     bool ensureInitialised();
 
     void setIdle(NodeID const& _peerID);
@@ -175,7 +180,7 @@ private:
     std::atomic<bool> m_newBlocks = {false};
 
     std::shared_ptr<BlockChainSync> m_sync;
-    std::atomic<time_t> m_lastTick = { 0 };
+    std::atomic<time_t> m_lastTick = {0};
 
     std::unique_ptr<EthereumHostDataFace> m_hostData;
     std::unique_ptr<EthereumPeerObserverFace> m_peerObserver;
@@ -188,6 +193,5 @@ private:
     /// Logger for messages about impolite behaivour of peers.
     Logger m_loggerImpolite{createLogger(VerbosityDebug, "impolite")};
 };
-
 }
 }

@@ -85,7 +85,9 @@ int Session::rating() const
 bool Session::readPacket(uint16_t _capId, unsigned _packetType, RLP const& _r)
 {
     m_lastReceived = chrono::steady_clock::now();
-    clog(VerbosityTrace, "net") << "-> " << _packetType << " " << _r;
+    clog(VerbosityTrace, "net") << "Received " << capabilityPacketTypeToString(_packetType) << "("
+                                << _packetType << ")"
+                                << " from " << m_info.id << "@" << m_socket->remoteEndpoint();
     try // Generic try-catch block designed to capture RLP format errors - TODO: give decent diagnostics, make a bit more specific over what is caught.
     {
         // v4 frame headers are useless, offset packet type used
@@ -435,4 +437,23 @@ boost::optional<unsigned> Session::capabilityOffset(std::string const& _capabili
 {
     auto it = m_capabilityOffsets.find(_capabilityName);
     return it == m_capabilityOffsets.end() ? boost::optional<unsigned>{} : it->second;
+}
+
+char const* Session::capabilityPacketTypeToString(unsigned _packetType) const
+{
+    if (_packetType < UserPacket)
+        return p2pPacketTypeToString(static_cast<P2pPacketType>(_packetType));
+    for (auto capIter : m_capabilities)
+    {
+        auto const& capName = capIter.first.first;
+        auto const& capVersion = capIter.first.second;
+        auto cap = capIter.second;
+        if (canHandle(capName, cap->messageCount(), _packetType))
+        {
+            auto offset = capabilityOffset(capName);
+            assert(offset);
+            return cap->packetTypeToString(_packetType - *offset);
+        }
+    }
+    return "Unknown";
 }

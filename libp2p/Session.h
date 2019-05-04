@@ -148,6 +148,8 @@ private:
     bool canHandle(
         std::string const& _capability, unsigned _messageCount, unsigned _packetType) const;
 
+    char const* capabilityPacketTypeToString(unsigned _packetType) const;
+
     Host* m_server;							///< The host that owns us. Never null.
 
     std::unique_ptr<RLPXFrameCoder> m_io;	///< Transport over which packets are sent.
