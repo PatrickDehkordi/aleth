@@ -129,6 +129,7 @@ bool Session::interpret(P2pPacketType _t, RLP const& _r)
     {
     case DisconnectPacket:
     {
+        clog(VerbosityTrace, "p2pcap") << p2pPacketTypeToString(DisconnectPacket) << " from " << m_info.id << "@" << m_socket->remoteEndpoint();
         string reason = "Unspecified";
         auto r = (DisconnectReason)_r[0].toInt<int>();
         if (!_r[0].isInt())
@@ -144,12 +145,14 @@ bool Session::interpret(P2pPacketType _t, RLP const& _r)
     }
     case PingPacket:
     {
+        clog(VerbosityTrace, "p2pcap") << "Ping from " << m_info.id << "@" << m_socket->remoteEndpoint();
         clog(VerbosityTrace, "p2pcap") << "Pong to " << m_info.id << "@" << m_socket->remoteEndpoint();
         RLPStream s;
         sealAndSend(prep(s, PongPacket));
         break;
     }
     case PongPacket:
+        clog(VerbosityTrace, "p2pcap") << "Pong from " << m_info.id << "@" << m_socket->remoteEndpoint();
         DEV_GUARDED(x_info)
         {
             m_info.lastPing = std::chrono::steady_clock::now() - m_ping;
